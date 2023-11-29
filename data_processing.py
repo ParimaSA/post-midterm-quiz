@@ -3,6 +3,7 @@ import csv, os
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+
 class DB:
     def __init__(self):
         self.database = []
@@ -15,8 +16,11 @@ class DB:
             if table.table_name == table_name:
                 return table
         return None
-    
+
+
 import copy
+
+
 class Table:
     def __init__(self, table_name, table):
         self.table_name = table_name
@@ -97,6 +101,65 @@ class Table:
             pivot_table.append([item, aggregate_val_list])
         return pivot_table
 
+    def insert_row(self, dict):
+        '''
+        This method inserts a dictionary, dict, into a Table object, effectively adding a row to the Table.
+        '''
+        self.table.append(dict)
+
+    def update_row(self, primary_attribute, primary_attribute_value, update_attribute, update_value):
+        '''
+        This method updates the current value of update_attribute to update_value
+        For example, my_table.update_row('Film', 'A Serious Man', 'Year', '2022') will change the 'Year' attribute for the 'Film'
+        'A Serious Man' from 2009 to 2022
+        '''
+        fil = self.filter(lambda x: x[primary_attribute] == primary_attribute_value)
+        for i in fil.table:
+            i[update_attribute] = update_value
+
     def __str__(self):
         return self.table_name + ':' + str(self.table)
 
+
+movie = []
+with open(os.path.join(__location__, 'movies.csv')) as f:
+    rows = csv.DictReader(f)
+    for r in rows:
+        movie.append(dict(r))
+
+my_DB = DB()
+movie_table = Table('movies', movie)
+my_DB.insert(movie_table)
+
+comedy = movie_table.filter(lambda x: x['Genre'] == 'Comedy')
+# print(comedy.table)
+avg_world = comedy.aggregate(lambda x: sum(x)/len(x), 'Worldwide Gross')
+print(f'Average Worldwide Gross for Comedy movie: {avg_world}')
+
+drama = movie_table.filter(lambda x: x['Genre'] == 'Drama')
+min_aud = drama.aggregate(lambda x: min(x), 'Audience score %')
+print(f'Minimum Audience score for Drama movie: {min_aud}')
+
+print()
+fantasy = movie_table.filter(lambda x: x['Genre'] == 'Fantasy')
+num_fan = fantasy.aggregate(lambda x: len(x), 'Film')
+print('Number of Fantasy movie:', num_fan)
+
+dict = {}
+dict['Film'] = 'The Shape of Water'
+dict['Genre'] = 'Fantasy'
+dict['Lead Studio'] = 'Fox'
+dict['Audience score %'] = '72'
+dict['Profitability'] = '9.765'
+dict['Rotten Tomatoes %'] = '92'
+dict['Worldwide Gross'] = '195.3'
+dict['Year'] = '2017'
+
+movie_table.insert_row(dict)
+fantasy = movie_table.filter(lambda x: x['Genre'] == 'Fantasy')
+num_fan = fantasy.aggregate(lambda x: len(x), 'Film')
+print('Number of Fantasy movie:', num_fan)
+
+
+movie_table.update_row('Film', 'A Serious Man', 'Year', '2022')
+# print(movie_table.table)
